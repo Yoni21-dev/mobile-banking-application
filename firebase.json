@@ -1,0 +1,31 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "mobile-banking-app-26a13",
+          "appId": "1:828770828147:android:cad8ad9e5aacf0e9cf0f06",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "mobile-banking-app-26a13",
+          "configurations": {
+            "android": "1:828770828147:android:cad8ad9e5aacf0e9cf0f06",
+            "ios": "1:828770828147:ios:140126c1239395c4cf0f06",
+            "macos": "1:828770828147:ios:140126c1239395c4cf0f06",
+            "web": "1:828770828147:web:0aab67d6731e39c0cf0f06",
+            "windows": "1:828770828147:web:51750ae8fc4fcc06cf0f06"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "eur3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
