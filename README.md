@@ -61,9 +61,6 @@ lib/
 
 ## Core Functionalities
 
-### Deposit
-
-Users can deposit funds into their account.
 
 ### Withdraw
 
@@ -83,7 +80,7 @@ Firebase services used:
 
 * Firebase Authentication
 * Cloud Firestore
-* Firebase Storage
+* cloudariy Storage
 
 ## Security Features
 
