@@ -17,7 +17,7 @@ A secure and interactive mobile banking application developed using Flutter and 
 * Flutter
 * Firebase Authentication
 * Cloud Firestore
-* Firebase Storage
+* cloudariy Storage
 
 ## Project Architecture
 
