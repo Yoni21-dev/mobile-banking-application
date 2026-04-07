@@ -1,17 +1,101 @@
-# mobile_banking_app
+# Mobile Banking App
 
-A new Flutter project.
+A secure and interactive mobile banking application developed using Flutter and Firebase.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+* User registration and login
+* Secure authentication
+* Withdraw money
+* Transfer money between accounts
+* Transaction history
+* User profile management
+* ID verification upload
 
-A few resources to get you started if this is your first Flutter project:
+## Technology Stack
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+* Flutter
+* Firebase Authentication
+* Cloud Firestore
+* Firebase Storage
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project Architecture
+
+```text
+lib/
+│
+├── main.dart
+├── firebase_options.dart
+│
+├── models/
+│   ├── user_model.dart
+│   ├── account_model.dart
+│   └── transaction_model.dart
+│
+├── services/
+│   └── api_service.dart
+│
+├── widgets/
+│   ├── custom_button.dart
+│   ├── pin_dialog.dart
+│   └── transaction_receipt.dart
+│
+├── screens/
+│   ├── auth/
+│   │   ├── login_screen.dart
+│   │   └── register_screen.dart
+│   │
+│   ├── home/
+│   │   └── dashboard_screen.dart
+│   │
+│   ├── account/
+│   │   ├── deposit_screen.dart
+│   │   ├── withdraw_screen.dart
+│   │   ├── transfer_screen.dart
+│   │   └── transactions_screen.dart
+│   │
+│   └── profile/
+│       ├── profile_screen.dart
+│       └── id_preview_screen.dart
+```
+
+## Core Functionalities
+
+### Deposit
+
+Users can deposit funds into their account.
+
+### Withdraw
+
+Users can withdraw funds after balance validation.
+
+### Transfer
+
+Users can transfer money securely between accounts.
+
+### Transaction History
+
+Users can view all transaction records.
+
+## Backend Services
+
+Firebase services used:
+
+* Firebase Authentication
+* Cloud Firestore
+* Firebase Storage
+
+## Security Features
+
+* Authentication validation
+* PIN confirmation
+* Cloud data protection
+
+## Future Improvements
+
+* OTP verification
+* Biometric login
+* Push notifications
+* QR code payments
+
+
