@@ -198,7 +198,7 @@ class ApiService {
   return false;
 }
 
-  static Future<void> deposit(double amount) async {
+ /* static Future<void> deposit(double amount) async {
     
      if (amount <= 0) return;
     if (currentUserDocId == null) return;
@@ -223,7 +223,7 @@ class ApiService {
       'balance': currentUser!.account.balance,
       'transactions': FieldValue.arrayUnion([tx]),
     });
-  }
+  } */
 
   static Future<bool> withdraw(double amount) async {
     if (amount <= 0) return false;
