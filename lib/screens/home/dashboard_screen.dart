@@ -293,6 +293,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             CircleAvatar(
               radius: 28,
+              // ignore: deprecated_member_use
               backgroundColor: color.withOpacity(0.12),
               child: Icon(icon, size: 32, color: color),
             ),

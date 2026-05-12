@@ -6,7 +6,8 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final transactions = ApiService.currentUser?.transactions.reversed.toList() ?? [];
+    final transactions =
+        ApiService.currentUser?.transactions.reversed.toList() ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xfff5f7fb),
@@ -26,10 +27,7 @@ class HistoryScreen extends StatelessWidget {
           ? const Center(
               child: Text(
                 "No Transactions Yet",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             )
           : ListView.builder(
@@ -77,6 +75,7 @@ class HistoryScreen extends StatelessWidget {
 
                     leading: CircleAvatar(
                       radius: 24,
+                      // ignore: deprecated_member_use
                       backgroundColor: color.withOpacity(0.12),
                       child: Icon(icon, color: color),
                     ),
@@ -93,9 +92,7 @@ class HistoryScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         tx.formattedDate,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                        ),
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ),
 

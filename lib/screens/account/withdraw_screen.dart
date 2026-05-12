@@ -78,112 +78,125 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
   @override
   Widget build(BuildContext context) {
-return Scaffold(
-  backgroundColor: const Color(0xfff5f7fb),
-  resizeToAvoidBottomInset: true,
+    return Scaffold(
+      backgroundColor: const Color(0xfff5f7fb),
+      resizeToAvoidBottomInset: true,
 
-  appBar: AppBar(
-    title: const Text(
-      "Withdraw Money",
-      style: TextStyle(fontWeight: FontWeight.bold),
-    ),
-    centerTitle: true,
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    foregroundColor: Colors.black87,
-  ),
-
-  /// 🔥 BODY (NO BUTTON HERE)
-  body: Padding(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        /// Top Card
-        Container(
-          padding: const EdgeInsets.all(25),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xfff7971e),
-                Color(0xffffd200),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.shade200,
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Column(
-            children: [
-              Icon(Icons.money_off, size: 55, color: Colors.white),
-              SizedBox(height: 12),
-              Text(
-                "Withdraw from your account",
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ],
-          ),
+      appBar: AppBar(
+        title: const Text(
+          "Withdraw Money",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+      ),
 
-        const SizedBox(height: 35),
-
-        /// Amount Field
-        TextField(
-          controller: amountController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: "Withdraw Amount",
-            errorText: amountError,
-            prefixIcon: const Icon(Icons.money_off),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide.none,
-            ),
-          ),
+      /// 🔥 UPDATED BODY (FIXED OVERFLOW)
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
         ),
-      ],
-    ),
-  ),
-
-  /// 🔥 FIXED BUTTON (KEY PART)
-  bottomNavigationBar: AnimatedPadding(
-    duration: const Duration(milliseconds: 200),
-    padding: EdgeInsets.fromLTRB(
-      20,
-      10,
-      20,
-      MediaQuery.of(context).viewInsets.bottom + 15, // 🔥 moves with keyboard
-    ),
-    child: SafeArea(
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            /// Top Card
+            Container(
+              padding: const EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xfff7971e),
+                    Color(0xffffd200),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.shade200,
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.money_off, size: 55, color: Colors.white),
+                  SizedBox(height: 12),
+                  Text(
+                    "Withdraw from your account",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            elevation: 5,
-          ),
-          onPressed: onWithdrawPressed,
-          child: const Text(
-            "Confirm Withdraw",
-            style: TextStyle(fontSize: 16),
+
+            const SizedBox(height: 35),
+
+            /// Amount Field
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Withdraw Amount",
+                errorText: amountError,
+                prefixIcon: const Icon(Icons.money_off),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 20,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            /// Extra spacing so keyboard doesn't overflow
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+
+      /// 🔥 FIXED BUTTON
+      bottomNavigationBar: AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          10,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 15,
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                elevation: 5,
+              ),
+              onPressed: onWithdrawPressed,
+              child: const Text(
+                "Confirm Withdraw",
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
           ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 }
