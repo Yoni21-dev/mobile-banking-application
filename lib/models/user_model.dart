@@ -5,7 +5,6 @@ class UserModel {
   String fullName;
   String email;
   String phone;
-  String password;
   String pin;
   bool blocked;
   AccountModel account;
@@ -16,7 +15,6 @@ class UserModel {
     required this.fullName,
     required this.email,
     required this.phone,
-    required this.password,
     required this.pin,
     this.blocked = false,
     required this.account,
@@ -29,7 +27,6 @@ class UserModel {
       fullName: map['fullName'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
-      password: map['password'] ?? '',
       pin: map['pin'] ?? '',
       blocked: map['blocked'] ?? false,
       account: AccountModel(
@@ -52,7 +49,6 @@ class UserModel {
       'fullName': fullName,
       'email': email,
       'phone': phone,
-      'password': password,
       'pin': pin,
       'blocked': blocked,
       'accountNumber': account.accountNumber,
@@ -62,4 +58,3 @@ class UserModel {
     };
   }
 }
-

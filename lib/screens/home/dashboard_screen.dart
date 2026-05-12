@@ -32,13 +32,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> restoreSession() async {
     if (ApiService.currentUser != null) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final savedUser = prefs.getString('loggedUser');
-
-    if (savedUser != null) {
-      await ApiService.restoreUser(savedUser);
-      setState(() {});
-    }
+    await ApiService.restoreUser();
+    setState(() {});
   }
 
   void openScreen(Widget screen) {
@@ -95,25 +90,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildHeaderCard(user),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildHeaderCard(user),
 
-              const SizedBox(height: 25),
+                const SizedBox(height: 25),
 
-              Expanded(
-                child: GridView.count(
+                GridView.count(
                   crossAxisCount: 2,
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                   childAspectRatio: 1.05,
-                  padding: const EdgeInsets.only(
-                    bottom: 16,
-                  ), // Added extra bottom padding
-                  physics:
-                      const BouncingScrollPhysics(), // Allows scrolling when keyboard is open
+                  padding: const EdgeInsets.only(bottom: 16),
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
                   children: [
                     _buildCard(
                       Icons.remove_circle,
@@ -153,8 +146,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     }),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

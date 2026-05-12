@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/api_service.dart';
 import '../home/dashboard_screen.dart';
 import 'register_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-//import 'package:crypto/crypto.dart';
-//import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,20 +54,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void showMsg(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void forgotPassword() {
-    final contactController = TextEditingController();
+    final emailController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Forgot Password'),
         content: TextField(
-          controller: contactController,
-          decoration: const InputDecoration(labelText: 'Enter Email or Phone'),
+          controller: emailController,
+          decoration: const InputDecoration(labelText: 'Enter Email'),
         ),
         actions: [
           TextButton(
@@ -77,20 +75,24 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              String contact = contactController.text.trim();
+              String email = emailController.text.trim();
 
-              if (contact.isEmpty) {
-                showMsg('Please enter email or phone');
+              if (email.isEmpty) {
+                showMsg('Please enter email');
                 return;
               }
 
-              String otp = ApiService.generateOtp();
-
-              showMsg('Verification code: $otp');
-
-              Navigator.pop(context);
+              try {
+                await FirebaseAuth.instance.sendPasswordResetEmail(
+                  email: email,
+                );
+                showMsg('Password reset email sent');
+                Navigator.pop(context);
+              } catch (e) {
+                showMsg('Error: ${e.toString()}');
+              }
             },
-            child: const Text('Send Code'),
+            child: const Text('Send Reset Email'),
           ),
         ],
       ),
@@ -193,8 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: login,
                         child: const Text(
                           "LOGIN",
-                          style: TextStyle(
-                              fontSize: 18, color: Colors.white),
+                          style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
                       ),
                 const SizedBox(height: 10),

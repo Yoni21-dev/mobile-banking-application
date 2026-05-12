@@ -1,16 +1,15 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../models/account_model.dart';
 import '../models/transaction_model.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 
 class ApiService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   static UserModel? currentUser;
-  static String? currentUserDocId;
   static String? currentOtp;
   static int pinAttempts = 0;
 
@@ -24,11 +23,6 @@ class ApiService {
         RegExp(r'[0-9]').hasMatch(password);
   }
 
-  static List<Map<String, dynamic>> users = [];
-  static String hashPassword(String input) {
-    return sha256.convert(utf8.encode(input.trim())).toString();
-  }
-
   static Future<String> register(
     String name,
     String email,
@@ -39,68 +33,34 @@ class ApiService {
     String? idImagePath,
   ) async {
     try {
-      // Validate email/phone
-      if (email.isEmpty && phone.isEmpty) {
-        return "Enter a valid email or Ethiopian phone";
+      // Validate inputs
+      if (email.isEmpty) {
+        return "Enter a valid email";
       }
 
-      // Check deposit
-      if (initialAmount <= 50)
+      if (initialAmount <= 50) {
         return "Initial deposit must be greater than 50 Birr";
-
-      // Hash password and pin
-      String hashedPassword = hashPassword(password);
-      String hashedPin = hashPassword(pin);
-
-      // Check existing user in Firestore
-      final emailQuery = email.isNotEmpty
-          ? await _firestore
-                .collection('users')
-                .where('email', isEqualTo: email)
-                .get()
-          : await _firestore
-                .collection('users')
-                .where('email', isEqualTo: "__none__")
-                .get();
-
-      final phoneQuery = phone.isNotEmpty
-          ? await _firestore
-                .collection('users')
-                .where('phone', isEqualTo: phone)
-                .get()
-          : await _firestore
-                .collection('users')
-                .where('phone', isEqualTo: "__none__")
-                .get();
-
-      if (emailQuery.docs.isNotEmpty || phoneQuery.docs.isNotEmpty) {
-        return "User already exists";
       }
+
+      if (!isStrongPassword(password)) {
+        return "Password must be 8+ chars, uppercase, number";
+      }
+
+      // Create Firebase Auth user
+      final UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      final uid = userCredential.user!.uid;
 
       // Generate account number
       String accountNumber = generateAccountNumber();
 
-      // Save user to Firestore
-      await _firestore.collection('users').add({
+      // Create user profile in Firestore using Firebase UID
+      await _firestore.collection('users').doc(uid).set({
         'fullName': name.trim(),
         'email': email,
         'phone': phone,
-        'password': hashedPassword,
-        'pin': hashedPin,
-        'blocked': false,
-        'accountNumber': accountNumber,
-        'balance': initialAmount,
-        'idImagePath': idImagePath ?? '',
-        'transactions': [],
-      });
-
-      // Save locally for offline usage (optional)
-      users.add({
-        'fullName': name.trim(),
-        'email': email,
-        'phone': phone,
-        'password': hashedPassword,
-        'pin': hashedPin,
+        'pin': pin,
         'blocked': false,
         'accountNumber': accountNumber,
         'balance': initialAmount,
@@ -109,42 +69,34 @@ class ApiService {
       });
 
       return "Account created\nAccount No: $accountNumber";
-    } catch (e, st) {
-      print("REGISTER ERROR: $e\n$st"); // <-- prints exact Firestore error
-      return "Registration failed: ${e.toString()}"; // <-- more informative
+    } on FirebaseAuthException catch (e) {
+      return "Registration failed: ${e.message}";
+    } catch (e) {
+      print("REGISTER ERROR: $e");
+      return "Registration failed: ${e.toString()}";
     }
   }
 
-  static Future<String> login(String emailOrPhone, String password) async {
+  static Future<String> login(String email, String password) async {
     try {
-      // Hash the input password
-      String hashedInput = hashPassword(password);
+      // Sign in with Firebase Auth
+      final UserCredential userCredential = await _auth
+          .signInWithEmailAndPassword(email: email, password: password);
 
-      // First try finding by email
-      final emailQuery = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: emailOrPhone)
-          .get();
+      final uid = userCredential.user!.uid;
 
-      // If not found by email, try phone
-      final phoneQuery = emailQuery.docs.isEmpty
-          ? await _firestore
-                .collection('users')
-                .where('phone', isEqualTo: emailOrPhone)
-                .get()
-          : emailQuery;
+      // Fetch user profile from Firestore
+      final doc = await _firestore.collection('users').doc(uid).get();
 
-      if (phoneQuery.docs.isEmpty) return "Invalid credentials";
+      if (!doc.exists) {
+        return "User profile not found";
+      }
 
-      final doc = phoneQuery.docs.first;
-      final data = doc.data();
+      final data = doc.data()!;
 
-      // Compare hashed password
-      if (data['password'] != hashedInput) return "Invalid credentials";
-
-      if (data['blocked'] == true) return "Account blocked";
-
-      currentUserDocId = doc.id;
+      if (data['blocked'] == true) {
+        return "Account blocked";
+      }
 
       // Load transactions
       List<TransactionModel> loadedTransactions = [];
@@ -165,7 +117,6 @@ class ApiService {
         fullName: data['fullName'],
         email: data['email'],
         phone: data['phone'],
-        password: data['password'],
         pin: data['pin'],
         blocked: data['blocked'],
         idImagePath: data['idImagePath'],
@@ -178,6 +129,14 @@ class ApiService {
       currentUser!.transactions = loadedTransactions;
 
       return "Login successful";
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        return "Invalid credentials";
+      } else if (e.code == 'wrong-password') {
+        return "Invalid credentials";
+      } else {
+        return "Login failed: ${e.message}";
+      }
     } catch (e) {
       print("LOGIN ERROR: $e");
       return "Login failed";
@@ -185,14 +144,11 @@ class ApiService {
   }
 
   static Future<bool> verifyPin(String inputPin) async {
-    if (currentUser == null || currentUserDocId == null) return false;
-
-    // Hash the entered PIN
-    String hashedInput = hashPassword(inputPin);
+    if (currentUser == null) return false;
 
     // Check if PIN matches
-    if (currentUser!.pin == hashedInput) {
-      pinAttempts = 0; // reset attempts on success
+    if (currentUser!.pin == inputPin) {
+      pinAttempts = 0;
       return true;
     }
 
@@ -204,9 +160,12 @@ class ApiService {
       currentUser!.blocked = true;
 
       try {
-        await _firestore.collection('users').doc(currentUserDocId).update({
-          'blocked': true,
-        });
+        final uid = _auth.currentUser?.uid;
+        if (uid != null) {
+          await _firestore.collection('users').doc(uid).update({
+            'blocked': true,
+          });
+        }
       } catch (e) {
         print("Error blocking user: $e");
       }
@@ -244,9 +203,12 @@ class ApiService {
 
   static Future<bool> withdraw(double amount) async {
     if (amount <= 0) return false;
-    if (currentUser!.account.balance < amount || currentUserDocId == null) {
+    if (currentUser!.account.balance < amount) {
       return false;
     }
+
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
 
     currentUser!.account.balance -= amount;
 
@@ -264,7 +226,7 @@ class ApiService {
       ),
     );
 
-    await _firestore.collection('users').doc(currentUserDocId).update({
+    await _firestore.collection('users').doc(uid).update({
       'balance': currentUser!.account.balance,
       'transactions': FieldValue.arrayUnion([tx]),
     });
@@ -274,6 +236,10 @@ class ApiService {
 
   static Future<String> transfer(String accountNumber, double amount) async {
     if (amount <= 0) return "Invalid amount";
+
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return "Not authenticated";
+
     final receiverQuery = await _firestore
         .collection('users')
         .where('accountNumber', isEqualTo: accountNumber)
@@ -286,6 +252,7 @@ class ApiService {
     if (currentUser!.account.balance < amount) {
       return "Insufficient balance";
     }
+
     if (accountNumber == currentUser!.account.accountNumber) {
       return "Cannot transfer to your own account";
     }
@@ -311,7 +278,7 @@ class ApiService {
     );
 
     await _firestore.runTransaction((transaction) async {
-      transaction.update(_firestore.collection('users').doc(currentUserDocId), {
+      transaction.update(_firestore.collection('users').doc(uid), {
         'balance': currentUser!.account.balance,
         'transactions': FieldValue.arrayUnion([tx]),
       });
@@ -358,64 +325,64 @@ class ApiService {
     String emailOrPhone,
     String newPassword,
   ) async {
-    final query = await _firestore.collection('users').get();
-
-    for (var doc in query.docs) {
-      if (doc['email'] == emailOrPhone || doc['phone'] == emailOrPhone) {
-        await doc.reference.update({'password': newPassword});
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await user.updatePassword(newPassword);
       }
+    } catch (e) {
+      print("Error updating password: $e");
     }
   }
 
   static void logout() {
     currentUser = null;
-    currentUserDocId = null;
+    _auth.signOut();
   }
 
-  static Future<bool> restoreUser(String emailOrPhone) async {
-    final query = await _firestore.collection('users').get();
+  static Future<bool> restoreUser() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
 
-    for (var doc in query.docs) {
-      final data = doc.data();
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
 
-      if (data['email'] == emailOrPhone || data['phone'] == emailOrPhone) {
-        currentUserDocId = doc.id;
+      if (!doc.exists) return false;
 
-        List<TransactionModel> loadedTransactions = [];
+      final data = doc.data()!;
 
-        if (data['transactions'] != null) {
-          for (var tx in data['transactions']) {
-            loadedTransactions.add(
-              TransactionModel(
-                type: tx['type'],
-                amount: (tx['amount'] as num).toDouble(),
-                date: tx['date'],
-                receiverAccount: tx['receiverAccount'],
-              ),
-            );
-          }
+      List<TransactionModel> loadedTransactions = [];
+      if (data['transactions'] != null) {
+        for (var tx in data['transactions']) {
+          loadedTransactions.add(
+            TransactionModel(
+              type: tx['type'],
+              amount: (tx['amount'] as num).toDouble(),
+              date: tx['date'],
+              receiverAccount: tx['receiverAccount'],
+            ),
+          );
         }
-
-        currentUser = UserModel(
-          fullName: data['fullName'],
-          email: data['email'],
-          phone: data['phone'],
-          password: data['password'],
-          pin: data['pin'],
-          blocked: data['blocked'],
-          idImagePath: data['idImagePath'],
-          account: AccountModel(
-            accountNumber: data['accountNumber'],
-            balance: (data['balance'] as num).toDouble(),
-          ),
-        );
-
-        currentUser!.transactions = loadedTransactions;
-
-        return true;
       }
-    }
 
-    return false;
+      currentUser = UserModel(
+        fullName: data['fullName'],
+        email: data['email'],
+        phone: data['phone'],
+        pin: data['pin'],
+        blocked: data['blocked'],
+        idImagePath: data['idImagePath'],
+        account: AccountModel(
+          accountNumber: data['accountNumber'],
+          balance: (data['balance'] as num).toDouble(),
+        ),
+      );
+
+      currentUser!.transactions = loadedTransactions;
+      return true;
+    } catch (e) {
+      print("Error restoring user: $e");
+      return false;
+    }
   }
 }

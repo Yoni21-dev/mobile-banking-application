@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'login_screen.dart';
@@ -18,7 +17,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final name = TextEditingController();
-  final emailOrPhone = TextEditingController();
+  final email = TextEditingController();
   final password = TextEditingController();
   final pin = TextEditingController();
   final amount = TextEditingController();
@@ -29,10 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscurePin = true;
   bool loading = false;
-
-  String hashString(String input) {
-    return sha256.convert(utf8.encode(input)).toString();
-  }
 
   Future<void> pickIdImage(ImageSource source) async {
     try {
@@ -56,8 +51,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     const cloudName = 'dl34jbpv1';
     const uploadPreset = 'id_upload';
 
-    final url =
-        Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
 
     try {
       final request = http.MultipartRequest('POST', url)
@@ -82,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> register() async {
     if (name.text.isEmpty ||
-        emailOrPhone.text.isEmpty ||
+        email.text.isEmpty ||
         password.text.isEmpty ||
         pin.text.isEmpty ||
         amount.text.isEmpty) {
@@ -95,13 +91,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    String input = emailOrPhone.text.trim();
-    final ethiopianPhoneRegex = RegExp(r'^(09|011)\d{8}$');
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-
-    if (!ethiopianPhoneRegex.hasMatch(input) &&
-        !emailRegex.hasMatch(input)) {
-      showMsg("Enter valid email or Ethiopian phone");
+    if (!emailRegex.hasMatch(email.text.trim())) {
+      showMsg("Enter valid email");
       return;
     }
 
@@ -136,23 +128,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-  String email = emailRegex.hasMatch(input) ? input.trim().toLowerCase() : "";
-  String phone = ethiopianPhoneRegex.hasMatch(input) ? input.trim() : "";
-
-if (email.isEmpty && phone.isEmpty) {
-  showMsg("Enter a valid email or Ethiopian phone");
-  return;
-}
-
-String result = await ApiService.register(
-  name.text.trim(),
-  email,
-  phone,
-  password.text.trim(),
-  pin.text.trim(),
-  initialAmount,
-  idUrl,
-);
+    String result = await ApiService.register(
+      name.text.trim(),
+      email.text.trim(),
+      "",
+      password.text.trim(),
+      pin.text.trim(),
+      initialAmount,
+      idUrl,
+    );
 
     setState(() {
       loading = false;
@@ -171,18 +155,14 @@ String result = await ApiService.register(
   }
 
   void showMsg(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   InputDecoration fieldStyle(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
     );
   }
 
@@ -202,11 +182,7 @@ String result = await ApiService.register(
             color: Colors.white,
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 15,
-                spreadRadius: 2,
-              )
+              BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: 2),
             ],
           ),
           child: Column(
@@ -227,18 +203,15 @@ String result = await ApiService.register(
               ),
               const SizedBox(height: 15),
               TextField(
-                controller: emailOrPhone,
-                decoration: fieldStyle("Email or Phone", Icons.email),
+                controller: email,
+                decoration: fieldStyle("Email", Icons.email),
               ),
               const SizedBox(height: 20),
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "Upload National ID / Kebele ID",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
               const SizedBox(height: 10),
@@ -250,9 +223,7 @@ String result = await ApiService.register(
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(color: Colors.grey),
                       ),
-                      child: const Center(
-                        child: Text("No ID uploaded"),
-                      ),
+                      child: const Center(child: Text("No ID uploaded")),
                     )
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(15),
@@ -291,9 +262,11 @@ String result = await ApiService.register(
                   labelText: "Password",
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword
-                        ? Icons.visibility
-                        : Icons.visibility_off),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
                     onPressed: () {
                       setState(() {
                         _obscurePassword = !_obscurePassword;
@@ -314,9 +287,9 @@ String result = await ApiService.register(
                   labelText: "4 Digit PIN",
                   prefixIcon: const Icon(Icons.pin),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePin
-                        ? Icons.visibility
-                        : Icons.visibility_off),
+                    icon: Icon(
+                      _obscurePin ? Icons.visibility : Icons.visibility_off,
+                    ),
                     onPressed: () {
                       setState(() {
                         _obscurePin = !_obscurePin;
@@ -332,8 +305,10 @@ String result = await ApiService.register(
               TextField(
                 controller: amount,
                 keyboardType: TextInputType.number,
-                decoration:
-                    fieldStyle("Initial Deposit (>50 Birr)", Icons.money),
+                decoration: fieldStyle(
+                  "Initial Deposit (>50 Birr)",
+                  Icons.money,
+                ),
               ),
               const SizedBox(height: 25),
               loading
@@ -349,10 +324,7 @@ String result = await ApiService.register(
                       onPressed: register,
                       child: const Text(
                         "Register",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
             ],
