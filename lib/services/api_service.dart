@@ -45,8 +45,15 @@ class ApiService {
   ) async {
     try {
       // Validate inputs
-      if (email.isEmpty) {
-        return "Enter a valid email";
+      if (emailOrPhone.isEmpty) {
+        return "Enter a valid email or phone";
+      }
+
+      final bool isEmailInput = isEmail(emailOrPhone);
+      final bool isPhoneInput = isPhone(emailOrPhone);
+
+      if (!isEmailInput && !isPhoneInput) {
+        return "Enter a valid email or phone";
       }
 
       if (initialAmount <= 50) {
@@ -57,7 +64,19 @@ class ApiService {
         return "Password must be 8+ chars, uppercase, number";
       }
 
-      // Create Firebase Auth user
+      String authEmail;
+      String email = '';
+      String phone = '';
+
+      if (isEmailInput) {
+        authEmail = emailOrPhone;
+        email = emailOrPhone;
+      } else {
+        phone = emailOrPhone;
+        authEmail = authEmailForPhone(phone);
+        // ✅ Removed pre-check query — Firebase Auth handles duplicates below
+      }
+
       final UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: authEmail, password: password);
 
@@ -80,7 +99,7 @@ class ApiService {
 
       return "Account created\nAccount No: $accountNumber";
     } on FirebaseAuthException catch (e) {
-      // ✅ UPDATED: handles duplicate phone/email via Firebase Auth
+      // ✅ Handles duplicate email or phone number
       if (e.code == 'email-already-in-use') {
         return "Phone number already registered";
       }
