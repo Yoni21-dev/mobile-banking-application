@@ -44,15 +44,9 @@ class ApiService {
     String? idImagePath,
   ) async {
     try {
-      if (emailOrPhone.isEmpty) {
-        return "Enter a valid email or phone";
-      }
-
-      final bool isEmailInput = isEmail(emailOrPhone);
-      final bool isPhoneInput = isPhone(emailOrPhone);
-
-      if (!isEmailInput && !isPhoneInput) {
-        return "Enter a valid email or phone";
+      // Validate inputs
+      if (email.isEmpty) {
+        return "Enter a valid email";
       }
 
       if (initialAmount <= 50) {
@@ -63,19 +57,7 @@ class ApiService {
         return "Password must be 8+ chars, uppercase, number";
       }
 
-      String authEmail;
-      String email = '';
-      String phone = '';
-
-      if (isEmailInput) {
-        authEmail = emailOrPhone;
-        email = emailOrPhone;
-      } else {
-        phone = emailOrPhone;
-        authEmail = authEmailForPhone(phone);
-        // ✅ REMOVED: pre-check query that caused permission-denied
-      }
-
+      // Create Firebase Auth user
       final UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: authEmail, password: password);
 
