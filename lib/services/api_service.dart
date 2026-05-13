@@ -17,6 +17,18 @@ class ApiService {
     return "1000${Random().nextInt(9000000) + 1000000}";
   }
 
+  static bool isEmail(String input) {
+    return RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(input);
+  }
+
+  static bool isPhone(String input) {
+    return RegExp(r'^(09|011)\d{8}').hasMatch(input);
+  }
+
+  static String authEmailForPhone(String phone) {
+    return '$phone@mobilebanking.local';
+  }
+
   static bool isStrongPassword(String password) {
     return password.length >= 8 &&
         RegExp(r'[A-Z]').hasMatch(password) &&
@@ -25,17 +37,22 @@ class ApiService {
 
   static Future<String> register(
     String name,
-    String email,
-    String phone,
+    String emailOrPhone,
     String password,
     String pin,
     double initialAmount,
     String? idImagePath,
   ) async {
     try {
-      // Validate inputs
-      if (email.isEmpty) {
-        return "Enter a valid email";
+      if (emailOrPhone.isEmpty) {
+        return "Enter a valid email or phone";
+      }
+
+      final bool isEmailInput = isEmail(emailOrPhone);
+      final bool isPhoneInput = isPhone(emailOrPhone);
+
+      if (!isEmailInput && !isPhoneInput) {
+        return "Enter a valid email or phone";
       }
 
       if (initialAmount <= 50) {
@@ -46,20 +63,31 @@ class ApiService {
         return "Password must be 8+ chars, uppercase, number";
       }
 
-      // Create Firebase Auth user
+      String authEmail;
+      String email = '';
+      String phone = '';
+
+      if (isEmailInput) {
+        authEmail = emailOrPhone;
+        email = emailOrPhone;
+      } else {
+        phone = emailOrPhone;
+        authEmail = authEmailForPhone(phone);
+        // ✅ REMOVED: pre-check query that caused permission-denied
+      }
+
       final UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
+          .createUserWithEmailAndPassword(email: authEmail, password: password);
 
       final uid = userCredential.user!.uid;
 
-      // Generate account number
       String accountNumber = generateAccountNumber();
 
-      // Create user profile in Firestore using Firebase UID
       await _firestore.collection('users').doc(uid).set({
         'fullName': name.trim(),
         'email': email,
         'phone': phone,
+        'authEmail': authEmail,
         'pin': pin,
         'blocked': false,
         'accountNumber': accountNumber,
@@ -70,6 +98,10 @@ class ApiService {
 
       return "Account created\nAccount No: $accountNumber";
     } on FirebaseAuthException catch (e) {
+      // ✅ UPDATED: handles duplicate phone/email via Firebase Auth
+      if (e.code == 'email-already-in-use') {
+        return "Phone number already registered";
+      }
       return "Registration failed: ${e.message}";
     } catch (e) {
       print("REGISTER ERROR: $e");
@@ -77,11 +109,29 @@ class ApiService {
     }
   }
 
-  static Future<String> login(String email, String password) async {
+  static Future<String> login(String emailOrPhone, String password) async {
     try {
-      // Sign in with Firebase Auth
+      String authEmail = emailOrPhone;
+      if (!isEmail(emailOrPhone)) {
+        final query = await _firestore
+            .collection('users')
+            .where('phone', isEqualTo: emailOrPhone)
+            .limit(1)
+            .get();
+
+        if (query.docs.isEmpty) {
+          return "Invalid credentials";
+        }
+
+        final userData = query.docs.first.data();
+        authEmail = userData['authEmail'] ?? userData['email'] ?? '';
+        if (authEmail.isEmpty) {
+          return "Invalid credentials";
+        }
+      }
+
       final UserCredential userCredential = await _auth
-          .signInWithEmailAndPassword(email: email, password: password);
+          .signInWithEmailAndPassword(email: authEmail, password: password);
 
       final uid = userCredential.user!.uid;
 

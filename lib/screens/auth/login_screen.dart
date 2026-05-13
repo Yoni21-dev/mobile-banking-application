@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/api_service.dart';
@@ -13,14 +14,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final email = TextEditingController();
+  final emailOrPhone = TextEditingController();
   final password = TextEditingController();
 
   bool obscurePassword = true;
   bool loading = false;
 
   Future<void> login() async {
-    if (email.text.isEmpty || password.text.isEmpty) {
+    if (emailOrPhone.text.isEmpty || password.text.isEmpty) {
       showMsg("All fields are required");
       return;
     }
@@ -30,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     String result = await ApiService.login(
-      email.text.trim(),
+      emailOrPhone.text.trim(),
       password.text.trim(),
     );
 
@@ -44,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result == "Login successful") {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('loggedUser', email.text.trim());
+      await prefs.setString('loggedUser', emailOrPhone.text.trim());
 
       Navigator.pushReplacement(
         context,
@@ -58,15 +59,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void forgotPassword() {
-    final emailController = TextEditingController();
+    final inputController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Forgot Password'),
         content: TextField(
-          controller: emailController,
-          decoration: const InputDecoration(labelText: 'Enter Email'),
+          controller: inputController,
+          decoration: const InputDecoration(labelText: 'Enter Email or Phone'),
         ),
         actions: [
           TextButton(
@@ -75,16 +76,50 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              String email = emailController.text.trim();
+              String input = inputController.text.trim();
 
-              if (email.isEmpty) {
-                showMsg('Please enter email');
+              if (input.isEmpty) {
+                showMsg('Please enter email or phone');
+                return;
+              }
+
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+              String? targetEmail;
+
+              if (emailRegex.hasMatch(input)) {
+                targetEmail = input;
+              } else {
+                final query = await FirebaseFirestore.instance
+                    .collection('users')
+                    .where('phone', isEqualTo: input)
+                    .limit(1)
+                    .get();
+
+                if (query.docs.isEmpty) {
+                  showMsg('User not found');
+                  return;
+                }
+
+                final data = query.docs.first.data();
+                if (data['email'] != null &&
+                    data['email'].toString().isNotEmpty) {
+                  targetEmail = data['email'];
+                } else {
+                  showMsg(
+                    'Password reset is only available for accounts registered with email.',
+                  );
+                  return;
+                }
+              }
+
+              if (targetEmail == null || targetEmail.isEmpty) {
+                showMsg('Password reset is not available for this user');
                 return;
               }
 
               try {
                 await FirebaseAuth.instance.sendPasswordResetEmail(
-                  email: email,
+                  email: targetEmail,
                 );
                 showMsg('Password reset email sent');
                 Navigator.pop(context);
@@ -101,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    email.dispose();
+    emailOrPhone.dispose();
     password.dispose();
     super.dispose();
   }
@@ -148,10 +183,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
                 TextField(
-                  controller: email,
+                  controller: emailOrPhone,
                   decoration: InputDecoration(
-                    labelText: "Email",
-                    prefixIcon: const Icon(Icons.email),
+                    labelText: "Email or Phone",
+                    prefixIcon: const Icon(Icons.person),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),

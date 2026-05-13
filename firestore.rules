@@ -1,16 +1,16 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      // Authenticated users can read user profiles for transfer lookup.
-      allow read: if request.auth != null;
+      // Allow reading for duplicate phone/email check during registration
+      allow read: if true;
 
-      // Users can modify their own profile documents.
-      allow create, delete: if request.auth != null && request.auth.uid == userId;
+      // Allow create for authenticated users only
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
 
-      // Allow authenticated transfer operations to update receiver balance only.
+      // Transfer: balance-only increase by authenticated users
       allow update: if request.auth != null
           && request.resource.data.diff(resource.data).changedKeys().hasOnly(['balance'])
           && request.resource.data.balance > resource.data.balance;

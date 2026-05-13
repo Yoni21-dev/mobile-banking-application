@@ -17,7 +17,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final name = TextEditingController();
-  final email = TextEditingController();
+  final emailOrPhone = TextEditingController();
   final password = TextEditingController();
   final pin = TextEditingController();
   final amount = TextEditingController();
@@ -78,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> register() async {
     if (name.text.isEmpty ||
-        email.text.isEmpty ||
+        emailOrPhone.text.isEmpty ||
         password.text.isEmpty ||
         pin.text.isEmpty ||
         amount.text.isEmpty) {
@@ -92,8 +92,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    if (!emailRegex.hasMatch(email.text.trim())) {
-      showMsg("Enter valid email");
+    final phoneRegex = RegExp(r'^(09|011)\d{8}');
+    if (!emailRegex.hasMatch(emailOrPhone.text.trim()) &&
+        !phoneRegex.hasMatch(emailOrPhone.text.trim())) {
+      showMsg("Enter valid email or phone");
       return;
     }
 
@@ -130,8 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     String result = await ApiService.register(
       name.text.trim(),
-      email.text.trim(),
-      "",
+      emailOrPhone.text.trim(),
       password.text.trim(),
       pin.text.trim(),
       initialAmount,
@@ -203,8 +204,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 15),
               TextField(
-                controller: email,
-                decoration: fieldStyle("Email", Icons.email),
+                controller: emailOrPhone,
+                decoration: fieldStyle("Email or Phone", Icons.email),
               ),
               const SizedBox(height: 20),
               const Align(
