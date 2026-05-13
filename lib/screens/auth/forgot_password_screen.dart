@@ -18,9 +18,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     String input = emailOrPhoneController.text.trim();
 
     if (input.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter email or phone")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Enter email or phone")));
       return;
     }
 
@@ -45,33 +45,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           .get();
 
       if (userQuery.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("User not found")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("User not found")));
         return;
       }
 
       // Generate 6-digit OTP (demo only)
-      String otp = (100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString();
+      String otp = (100000 + DateTime.now().millisecondsSinceEpoch % 900000)
+          .toString();
       ApiService.currentOtp = otp;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("OTP sent: $otp (demo only)")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("OTP sent: $otp (demo only)")));
 
       // Navigate to verification screen
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => VerificationCodeScreen(
-            userEmailOrPhone: input,
-          ),
+          builder: (_) => VerificationCodeScreen(userEmailOrPhone: input),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -118,18 +117,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               child: const Column(
                 children: [
-                  Icon(
-                    Icons.lock_reset,
-                    size: 55,
-                    color: Colors.white,
-                  ),
+                  Icon(Icons.lock_reset, size: 55, color: Colors.white),
                   SizedBox(height: 12),
                   Text(
                     "Recover your account securely",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ],
               ),
@@ -145,8 +137,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 prefixIcon: const Icon(Icons.person_outline),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 20,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none,

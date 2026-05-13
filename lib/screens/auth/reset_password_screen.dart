@@ -51,14 +51,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // Find user document by email or phone
       final querySnapshot = await _firestore
           .collection('users')
-          .where(widget.userEmailOrPhone.contains('@') ? 'email' : 'phone',
-              isEqualTo: widget.userEmailOrPhone)
+          .where(
+            widget.userEmailOrPhone.contains('@') ? 'email' : 'phone',
+            isEqualTo: widget.userEmailOrPhone,
+          )
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("User not found")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("User not found")));
         setState(() => loading = false);
         return;
       }
@@ -81,9 +83,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // Go back to login screen
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error resetting password")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Error resetting password")));
     } finally {
       setState(() => loading = false);
     }
@@ -155,8 +157,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 errorText: passwordError,
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 20,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none,
@@ -175,8 +179,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 errorText: confirmError,
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 20,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none,
